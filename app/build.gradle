@@ -13,9 +13,35 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
-        release {
+        debug {
+            buildConfigField "boolean", "LOG_DEBUG", "true"
+            debuggable true
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            shrinkResources false
+            zipAlignEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+        release {
+            buildConfigField "boolean", "LOG_DEBUG", "true"
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            zipAlignEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+            multiDexEnabled = true
+        }
+        android.applicationVariants.all { variant ->
+            variant.outputs.all { output ->
+                if (variant.versionName.contains(".111")) {
+                    buildConfigField("boolean", "DEBUG_SERVER", "true") //是否是测试服地址
+                } else {
+                    buildConfigField("boolean", "DEBUG_SERVER", "false")
+                }
+                def fileName = output.outputFile.name.replace(".apk", "-${variant.versionName}.apk")
+                outputFileName = fileName
+            }
         }
     }
 

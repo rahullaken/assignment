@@ -19,3 +19,34 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Rx Java:
+-dontwarn rx.**
+-keep class rx.** { *; }
+
+-dontwarn sun.misc.**
+-keepclassmembers class rx.internal.util.unsafe.ArrayQueueField* {
+long producerIndex;
+long consumerIndex;
+}
+
+-keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueProducerNodeRef {
+rx.internal.util.atomic.LinkedQueueNode producerNode;
+}
+-keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueConsumerNodeRef {
+rx.internal.util.atomic.LinkedQueueNode consumerNode;
+}
+
+###Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep public class * extends com.bumptech.glide.AppGlideModule
+-keep public enum com.bumptech.glide.load.resource.bitmap.ImageHeaderParser$** {
+  **[] $VALUES;
+  public *;
+}
+-dontwarn com.bumptech.glide.load.engine.bitmap_recycle.LruBitmapPool
+-dontwarn com.bumptech.glide.load.resource.bitmap.Downsampler
+-dontwarn com.bumptech.glide.load.resource.bitmap.HardwareConfigState
+-dontwarn com.bumptech.glide.load.resource.bitmap.VideoDecoder
+# for DexGuard only
+#-keepresourcexmlelements manifest/application/meta-data@value=GlideModule
