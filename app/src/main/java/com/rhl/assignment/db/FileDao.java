@@ -15,7 +15,7 @@ public interface FileDao {
     List<FileBean> getAll();
 
     @Insert
-    void insert(FileBean fileBean);
+    List<Long> insert(FileBean... fileBean);
 
     @Delete
     void delete(FileBean user);

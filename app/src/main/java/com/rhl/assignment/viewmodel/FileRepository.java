@@ -11,7 +11,7 @@ import rx.Observable;
 
 public class FileRepository {
 
-    public Observable<List<FileBean>> getFileList(final Context mContext) {
+    Observable<List<FileBean>> getFileList(final Context mContext) {
         return Observable.create(subscriber -> {
             List<FileBean> advertList = DatabaseClient.getInstance(mContext).getAppDatabase()
                     .fileDao().getAll();
@@ -20,11 +20,13 @@ public class FileRepository {
         });
     }
 
-    public Observable<Integer> saveData(Context mContext, FileBean fileBean) {
+    Observable<List<Long>> saveData(Context mContext, FileBean fileBean) {
         return Observable.create(subscriber -> {
-            DatabaseClient.getInstance(mContext).getAppDatabase()
+            List<Long> longs = DatabaseClient.getInstance(mContext).getAppDatabase()
                     .fileDao()
                     .insert(fileBean);
+            subscriber.onNext(longs);
+            subscriber.onCompleted();
         });
     }
 }

@@ -12,6 +12,7 @@ import android.os.Bundle;
 
 import com.rhl.assignment.adapter.FileAdapter;
 import com.rhl.assignment.bean.FileBean;
+import com.rhl.assignment.utils.ItemDecorationAlbumColumns;
 import com.rhl.assignment.viewmodel.FileViewModel;
 
 import java.util.List;
@@ -44,9 +45,9 @@ public class FileListActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.rv_file);
         RecyclerView.LayoutManager manager = new GridLayoutManager(this, 2);
         mRecyclerView.setLayoutManager(manager);
+        mRecyclerView.addItemDecoration(new ItemDecorationAlbumColumns(10,2));
         fileAdapter = new FileAdapter(mContext);
         mRecyclerView.setAdapter(fileAdapter);
-        mRecyclerView.setHasFixedSize(true);
         fileViewModel.getFileData(mContext);
 
     }

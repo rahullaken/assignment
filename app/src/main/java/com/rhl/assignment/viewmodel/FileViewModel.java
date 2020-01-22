@@ -12,6 +12,7 @@ import com.rhl.assignment.bean.FileBean;
 import java.util.List;
 
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 public class FileViewModel extends AndroidViewModel {
@@ -32,12 +33,8 @@ public class FileViewModel extends AndroidViewModel {
 
     public void saveFile(Context mContext, FileBean fileBean) {
         fileRepository.saveData(mContext, fileBean).subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread()).subscribe(integer -> {
-            if (integer > 0) {
-                saveData.setValue(true);
-            } else {
-                saveData.setValue(false);
-            }
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(longs -> {
+            saveData.setValue(true);
         }, throwable -> {
             saveData.setValue(false);
         });

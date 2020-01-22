@@ -42,7 +42,7 @@ import java.io.File;
 
 import rx.functions.Action1;
 
-public class MainActivity extends HiddenCameraActivity implements OnMapReadyCallback{
+public class MainActivity extends HiddenCameraActivity implements OnMapReadyCallback {
 
     private static final String TAG = MainActivity.class.getName();
 
@@ -65,33 +65,19 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
     }
 
     private void getLocationPermission() {
-        new RxPermissions(this).request(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION).subscribe(new Action1<Boolean>() {
-            @Override
-            public void call(Boolean granted) {
-                LocationUtils.getInstance().requestLocationInfo(mContext, new LocationUtils.OnLocationInfoListener() {
-                    @Override
-                    public void onLocationRequest(Location location, String countryName, String adminArea, String localty, String postalCode) {
-                        if (location != null) {
-                            showMarker(location.getLatitude(), location.getLongitude());
-                        } else {
-                            Log.d(TAG, "getUserPincode: empty");
-                        }
-                    }
-                });
-
+        new RxPermissions(this).request(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION).subscribe(granted -> LocationUtils.getInstance().requestLocationInfo(mContext, (location, countryName, adminArea, localty, postalCode) -> {
+            if (location != null) {
+                showMarker(location.getLatitude(), location.getLongitude());
+            } else {
+                Log.d(TAG, "getUserPincode: empty");
             }
-        }, new Action1<Throwable>() {
-            @Override
-            public void call(Throwable throwable) {
-                Log.e(TAG, "call: " + throwable.getMessage());
-            }
-        });
+        }), throwable -> Log.e(TAG, "call: " + throwable.getMessage()));
     }
 
     private void showMarker(double latitude, double longitude) {
         lat = latitude;
         longi = longitude;
-        if(mCurrentMarker!=null){
+        if (mCurrentMarker != null) {
             mCurrentMarker.remove();
         }
         LatLng latLng = new LatLng(latitude, longitude);
@@ -102,18 +88,16 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
         mCurrentMarker = googleMap.addMarker(options);
 
-        googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            public void onMapClick(LatLng point) {
-                showMarker(point.latitude, point.longitude);
-                takePicture();
-            }
+        googleMap.setOnMapClickListener(point -> {
+            showMarker(point.latitude, point.longitude);
+            takePicture();
         });
     }
 
 
     private void initView() {
         fileViewModel = ViewModelProviders.of(this).get(FileViewModel.class);
-        locationPermisson();
+        showPermission();
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync((OnMapReadyCallback) mContext);
@@ -125,44 +109,42 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
                 .setImageRotation(CameraRotation.ROTATION_270)
                 .build();
         //Check for the camera permission for the runtime
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-
-            //Start camera preview
-            startCamera(mCameraConfig);
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA},
-                    REQ_CODE_CAMERA_PERMISSION);
-        }
+        new RxPermissions(this).request(Manifest.permission.CAMERA).subscribe(new Action1<Boolean>() {
+            @Override
+            public void call(Boolean granted) {
+                if (granted) {
+                    startCamera(mCameraConfig);
+                } else {
+                    Toast.makeText(mContext, "Please Allow the Camera Permission", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }, throwable -> {
+            Log.e(TAG, "call: " + throwable.getMessage());
+        });
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
-        runOnUiThread(new Runnable() {
-            public void run() {
-                if (mCurrentMarker != null) {
-                    mCurrentMarker.remove();
-                }
-                getLocationPermission();
-
+        runOnUiThread(() -> {
+            if (mCurrentMarker != null) {
+                mCurrentMarker.remove();
             }
+            getLocationPermission();
+
         });
 
     }
 
-    private void locationPermisson() {
-        new RxPermissions((Activity) mContext).request(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION).subscribe(new Action1<Boolean>() {
-            @Override
-            public void call(Boolean granted) {
-                if (!granted) {
-                    Toast.makeText(mContext, "Please Allow the Location Permission", Toast.LENGTH_SHORT).show();
-                }
+    private void showPermission() {
+        new RxPermissions((Activity) mContext).request(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE).subscribe(granted -> {
+            if (!granted) {
+                Toast.makeText(mContext, "Please Allow the all Permission", Toast.LENGTH_SHORT).show();
             }
+        }, throwable -> {
+            Log.e(TAG, "call: " + throwable.getMessage());
         });
     }
-
-
 
 
     @Override
@@ -170,7 +152,7 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.RGB_565;
         Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath(), options);
-        Log.d(TAG, "onImageCapture: "+bitmap);
+        Log.d(TAG, "onImageCapture: " + bitmap);
         File file = new File(CAMERA_IMG);
         if (!file.exists()) {
             file.mkdirs();
@@ -182,18 +164,9 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
         fileBean.setFileName(filename);
         fileBean.setLat(lat);
         fileBean.setLongi(longi);
+
         //adding to database
-
         fileViewModel.saveFile(mContext, fileBean);
-
-
-        /*List<FileBean> fileBeanList = DatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
-                .fileDao().getAll();
-        for (FileBean bean : fileBeanList){
-            Log.d(TAG, "onImageCapture: lat="+bean.getLat());
-            Log.d(TAG, "onImageCapture: longi="+bean.getLongi());
-            Log.d(TAG, "onImageCapture: Name="+bean.getFileName());
-        }*/
 
     }
 
@@ -204,7 +177,6 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
@@ -212,13 +184,11 @@ public class MainActivity extends HiddenCameraActivity implements OnMapReadyCall
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-        switch (id){
-            case R.id.item1:
-                Intent intent = new Intent(mContext, FileListActivity.class);
-                startActivity(intent);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (id == R.id.item1) {
+            Intent intent = new Intent(mContext, FileListActivity.class);
+            startActivity(intent);
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 }
